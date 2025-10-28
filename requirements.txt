@@ -1,0 +1,7 @@
+camel-ai[all]
+yfinance
+tavily-python
+python-dotenv
+finnhub-python
+tushare
+akshar

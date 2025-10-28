@@ -6,7 +6,8 @@ touch .gitignore
 venv/
 *.pyc
 __pycache__/
-
+.vscode/
+output/
 # 操作系统文件
 .DS_Store
 Thumbs.db
