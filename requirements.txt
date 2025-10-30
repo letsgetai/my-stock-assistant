@@ -4,5 +4,5 @@ tavily-python
 python-dotenv
 finnhub-python
 tushare
-akshar
+akshare
 json-repair

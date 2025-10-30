@@ -13,17 +13,19 @@ def clean_dict_nan_none(d):
         and not (isinstance(value, float) and math.isnan(value))  # 排除 NaN
     }
 
-def A_stock_research_report_em(symbol: str = "000001") -> pd.DataFrame:
+def A_stock_research_report_em(symbol: str = "000001", num: int = 5) -> pd.DataFrame:
     """
     东方财富网-数据中心-研究报告-个股研报-根据对应的股票代码返回近期的各大机构的研报的主要信息以及对应pdf链接
     https://data.eastmoney.com/report/stock.jshtml
     :param symbol: 个股代码, 纯数字， 如 600519
+    :param num: 返回数量，默认为 5
     :type symbol: str
     :return: 个股研报
     :rtype: pandas.DataFrame
     """
     big_df = stock_research_report_em(symbol)
-    return big_df.head().to_string()
+
+    return big_df.head(num).to_string()
 
 def get_financial_data(symbol: str = "301389.SZ"):
     """
