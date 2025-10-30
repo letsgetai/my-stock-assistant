@@ -25,7 +25,7 @@ def A_stock_research_report_em(symbol: str = "000001") -> pd.DataFrame:
     big_df = stock_research_report_em(symbol)
     return big_df.head().to_string()
 
-def get_financial_data(symbol: str = "600519"):
+def get_financial_data(symbol: str = "301389.SZ"):
     """
     东方财富-A股-财务分析-主要指标
     https://emweb.securities.eastmoney.com/pc_hsf10/pages/index.html?type=web&code=SZ301389&color=b#/cwfx
@@ -66,7 +66,8 @@ search_market_info = FunctionTool(get_latest_market_info)
 ak_tools = [search_research_reports, search_financial_data, search_market_info]
 
 if __name__ == "__main__":
-    
+    get_financial_data("301389.SZ")
+    exit()
     print(A_stock_research_report_em("301389"))
     print(search_research_reports("301389"))
 

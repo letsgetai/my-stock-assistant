@@ -6,13 +6,19 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 # from tool.financial_tools import financial_tool_list
 from camel.toolkits.openbb_toolkit import OpenBBToolkit
-from camel.toolkits import FunctionTool, SearchToolkit
+from camel.toolkits import FunctionTool, SearchToolkit, get_openai_function_schema, get_openai_tool_schema
 from tool.ak import ak_tools
 from tool.read_url import read_url_tool
+from prompt.system_prompt import s_p_template
+from prompt.planner import planner_prompt
+from utils.parse import parse_stock_analyst_output_robust
+from utils.run_command import run_tool
+from utils.save_to_json import save_to_json
+import datetime
 
-google_tool = FunctionTool(SearchToolkit().search_tavily)
+search_tavily = FunctionTool(SearchToolkit().search_tavily)
 
-tools = ak_tools + [google_tool] + [read_url_tool]
+tools = ak_tools + [search_tavily] + [read_url_tool]
 
 # Method 7: Using ModelFactory with string parameters
 model = ModelFactory.create(
@@ -22,29 +28,32 @@ model = ModelFactory.create(
     model_config_dict={"max_tokens":32768,
                        "temperature":1,})
 
-system_prompt = """你是一个世界一流的股票分析师 (Stock Analyst Agent)。
-
-# 核心任务
-你的任务是深入、客观地分析用户提出的关于特定股票或公司的问题。
-
-# 执行步骤 (HINT)
-1.  你**必须**首先使用工具（如 `ak_tools`）来获取股票基本信息和公司信息。
-2.  然后，你**必须**使用搜索工具（如 `google_tool`）查找相关的研报链接。
-3.  当你获取研报的链接后，你**必须**使用 `read_url` 工具读取至少一篇研报的核心内容。
-4.  **最后**，在收集了所有上述信息（基本数据、研报内容）之后，你才能进行深度分析，并总结你的最终结果。
-
-# important: 
-    - 严格按照上述步骤执行。
-    - 必须使用 `read_url` 至少一次。
-
-记住上面的提示，开始你的调研：
-"""
+tools_description = str([tool.openai_tool_schema for tool in tools])
 
 
-agent = ChatAgent(system_message= system_prompt, model=model, 
-                  tools= tools,
-                  )
+def reaction_agent(question):
+    planner = ChatAgent(system_message= planner_prompt, model=model, 
+                    #   tools= tools,
+                    )
+    response = planner.step(question)
+    plan = response.msg.content
 
-response = agent.step("贵州茅台这个股票可以买嘛?")
 
-print(response.msg.content)
+    agent = ChatAgent(system_message= s_p_template.format(tools = tools_description, plan = plan), model=model, 
+                    #   tools= tools,
+                    )
+
+    response = agent.step(question)
+    resp = response.msg.content
+    while resp.endswith("</tool_calls>"):
+        thought, tool_call = parse_stock_analyst_output_robust(resp)
+        print(resp)
+        tool_result = run_tool(tool_call, tools)
+        response = agent.step(tool_result)
+        resp = response.msg.content
+
+    save_to_json(agent.chat_history, file_path=f"output/agent/output_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.json")
+    print(resp)
+
+
+reaction_agent("请帮我分析A股股票600519")

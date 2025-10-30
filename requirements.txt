@@ -5,3 +5,4 @@ python-dotenv
 finnhub-python
 tushare
 akshar
+json-repair
